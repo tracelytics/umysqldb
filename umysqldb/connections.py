@@ -123,6 +123,19 @@ class Connection(pymysql.connections.Connection):
             self._result = self._convert_result_set(result_set)
             return self._result.affected_rows
 
+    def ping(self,reconnect=False):
+        # XXX: make this use COM_PING
+        try:
+            return self.query("SELECT 1") == 1
+        except Exception, exc:
+            if reconnect:
+                self._connect() 
+                return self.ping(reconnect=False)
+            else:
+                exc,value,tb = sys.exc_info()
+                self.errorhandler(None, exc, value)
+                return
+
     def _convert_args(self, args):
         args = tuple(encoders.get(type(arg), notouch)(arg)
                      for arg in args)
